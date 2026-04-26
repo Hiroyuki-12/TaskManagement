@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>タスク管理アプリ（モック）</title>
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/reset.css" />
+    <link rel="stylesheet" href="assets/layout.css" />
+    <link rel="stylesheet" href="assets/components.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1 class="header__title">タスク管理アプリ</h1>
+      </header>
+      <main class="board" id="board"></main>
+    </div>
+
+    <!-- カード作成・編集モーダル -->
+    <div class="modal" id="card-modal" aria-modal="true" role="dialog">
+      <div class="modal__dialog">
+        <div class="modal__header">
+          <div class="modal__title" id="card-modal-title">カードを追加</div>
+          <button class="modal__close" type="button" data-close-modal aria-label="閉じる">×</button>
+        </div>
+        <form id="card-form" novalidate>
+          <div class="modal__body">
+            <div class="field" id="field-title">
+              <label class="field__label" for="f-title">タイトル<span class="required">*</span></label>
+              <input class="field__input" id="f-title" name="title" type="text" maxlength="100" />
+              <div class="field__error" hidden></div>
+            </div>
+            <div class="field" id="field-desc">
+              <label class="field__label" for="f-desc">説明</label>
+              <textarea class="field__textarea" id="f-desc" name="description" maxlength="1000"></textarea>
+              <div class="field__error" hidden></div>
+            </div>
+            <div class="field">
+              <label class="field__label" for="f-status">ステータス<span class="required">*</span></label>
+              <select class="field__select" id="f-status" name="columnId">
+                <option value="todo">未着手</option>
+                <option value="doing">作業中</option>
+                <option value="done">完了</option>
+              </select>
+            </div>
+            <div class="field">
+              <span class="field__label">優先度<span class="required">*</span></span>
+              <div class="field__radio-group">
+                <label class="field__radio"><input type="radio" name="priority" value="high" /> 高</label>
+                <label class="field__radio"><input type="radio" name="priority" value="mid" /> 中</label>
+                <label class="field__radio"><input type="radio" name="priority" value="low" /> 低</label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field__label" for="f-due">期限</label>
+              <input class="field__input" id="f-due" name="dueDate" type="date" />
+            </div>
+          </div>
+          <div class="modal__footer modal__footer--split">
+            <button class="btn btn--danger" type="button" id="btn-delete" hidden>削除</button>
+            <div style="display:flex; gap: var(--space-2); margin-left:auto;">
+              <button class="btn btn--secondary" type="button" data-close-modal>キャンセル</button>
+              <button class="btn btn--primary" type="submit">保存</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 削除確認ダイアログ -->
+    <div class="modal" id="delete-dialog" aria-modal="true" role="dialog">
+      <div class="modal__dialog modal__dialog--sm">
+        <div class="modal__header"><div class="modal__title">削除の確認</div></div>
+        <div class="modal__body">
+          <p class="confirm__message">このカードを削除しますか？この操作は取り消せません。</p>
+        </div>
+        <div class="modal__footer">
+          <button class="btn btn--secondary" type="button" data-close-modal>キャンセル</button>
+          <button class="btn btn--danger" type="button" id="btn-confirm-delete">削除する</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== データ =====
+      const COLUMNS = [
+        { id: "todo", name: "未着手" },
+        { id: "doing", name: "作業中" },
+        { id: "done", name: "完了" },
+      ];
+      const PRIORITY_LABEL = { high: "高", mid: "中", low: "低" };
+      const PRIORITY_ORDER = { high: 0, mid: 1, low: 2 };
+      let nextId = 5;
+      let cards = [
+        { id: 1, columnId: "todo", title: "要件定義書のレビュー依頼", description: "", priority: "high", dueDate: "" },
+        { id: 2, columnId: "todo", title: "ER図のドラフト作成", description: "", priority: "low", dueDate: "2026-05-10" },
+        { id: 3, columnId: "doing", title: "画面モックの作成", description: "画面設計書をもとにHTML/CSSでモックを作る。", priority: "mid", dueDate: "2026-04-30" },
+        { id: 4, columnId: "done", title: "技術スタックの決定", description: "", priority: "mid", dueDate: "" },
+      ];
+
+      // ===== ユーティリティ =====
+      const today = () => {
+        const d = new Date();
+        return d.toISOString().slice(0, 10);
+      };
+      const fmtDue = (s) => {
+        if (!s) return "";
+        const [, m, d] = s.split("-");
+        return `${Number(m)}/${Number(d)}`;
+      };
+      const isOverdue = (s) => s && s < today();
+      const escapeHtml = (s) =>
+        String(s).replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+        }[c]));
+
+      // ===== レンダリング =====
+      const board = document.getElementById("board");
+      function render() {
+        board.innerHTML = COLUMNS.map((col) => {
+          const list = cards.filter((c) => c.columnId === col.id);
+          const cardsHtml = list.length
+            ? `<ul class="column__list" data-list-col="${col.id}">${list.map(renderCard).join("")}</ul>`
+            : renderColumnEmpty(col.id);
+          return `
+            <section class="column" data-column="${col.id}">
+              <div class="column__header">
+                <div class="column__title">${col.name} <span class="badge badge--count">${list.length}</span></div>
+                <div style="display:flex; gap: var(--space-1);">
+                  <button class="btn btn--ghost" type="button" data-sort="${col.id}" title="優先度で並び替え">↕ 並び替え</button>
+                  <button class="btn btn--ghost" type="button" data-add="${col.id}">＋ 追加</button>
+                </div>
+              </div>
+              ${cardsHtml}
+            </section>
+          `;
+        }).join("");
+      }
+      function renderColumnEmpty(colId) {
+        return `<div class="column__empty" data-empty-col="${colId}">カードがありません</div>`;
+      }
+      function renderCard(c) {
+        const dueClass = isOverdue(c.dueDate) ? "card__due card__due--overdue" : "card__due";
+        const dueText = c.dueDate ? `<span class="${dueClass}">期限: ${fmtDue(c.dueDate)}${isOverdue(c.dueDate) ? "（超過）" : ""}</span>` : "";
+        return `
+          <li class="card" data-id="${c.id}" draggable="true">
+            <div class="card__title">${escapeHtml(c.title)}</div>
+            <div class="card__meta">
+              <span class="badge badge--priority-${c.priority}">優先度: ${PRIORITY_LABEL[c.priority]}</span>
+              ${dueText}
+            </div>
+          </li>
+        `;
+      }
+
+      // ===== モーダル制御 =====
+      const cardModal = document.getElementById("card-modal");
+      const cardForm = document.getElementById("card-form");
+      const cardModalTitle = document.getElementById("card-modal-title");
+      const btnDelete = document.getElementById("btn-delete");
+      const deleteDialog = document.getElementById("delete-dialog");
+      let editingId = null; // null = 新規, それ以外 = 編集対象id
+      let pendingColumnId = "todo";
+      let pendingDeleteId = null;
+
+      function openCreate(columnId) {
+        editingId = null;
+        pendingColumnId = columnId;
+        const colName = COLUMNS.find((c) => c.id === columnId).name;
+        cardModalTitle.textContent = `カードを追加（${colName}）`;
+        btnDelete.hidden = true;
+        cardForm.reset();
+        cardForm.querySelector('input[name="priority"][value="mid"]').checked = true;
+        cardForm.elements.columnId.value = columnId;
+        clearErrors();
+        cardModal.classList.add("is-open");
+        cardForm.querySelector('#f-title').focus();
+      }
+      function openEdit(id) {
+        const c = cards.find((x) => x.id === id);
+        if (!c) return;
+        editingId = id;
+        cardModalTitle.textContent = "カードを編集";
+        btnDelete.hidden = false;
+        cardForm.elements.title.value = c.title;
+        cardForm.elements.description.value = c.description;
+        cardForm.querySelector(`input[name="priority"][value="${c.priority}"]`).checked = true;
+        cardForm.elements.dueDate.value = c.dueDate;
+        cardForm.elements.columnId.value = c.columnId;
+        clearErrors();
+        cardModal.classList.add("is-open");
+      }
+      function closeAllModals() {
+        document.querySelectorAll(".modal.is-open").forEach((m) => m.classList.remove("is-open"));
+      }
+
+      function clearErrors() {
+        cardForm.querySelectorAll(".field").forEach((f) => {
+          f.classList.remove("field--error");
+          const e = f.querySelector(".field__error");
+          if (e) { e.hidden = true; e.textContent = ""; }
+        });
+      }
+      function setError(fieldId, message) {
+        const f = document.getElementById(fieldId);
+        f.classList.add("field--error");
+        const e = f.querySelector(".field__error");
+        e.textContent = message;
+        e.hidden = false;
+      }
+
+      // ===== イベント =====
+      board.addEventListener("click", (e) => {
+        const addBtn = e.target.closest("[data-add]");
+        if (addBtn) {
+          openCreate(addBtn.getAttribute("data-add"));
+          return;
+        }
+        const sortBtn = e.target.closest("[data-sort]");
+        if (sortBtn) {
+          const colId = sortBtn.getAttribute("data-sort");
+          const sorted = cards
+            .filter((c) => c.columnId === colId)
+            .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
+          const others = cards.filter((c) => c.columnId !== colId);
+          cards = [...others, ...sorted];
+          render();
+          return;
+        }
+        const cardEl = e.target.closest(".card");
+        if (cardEl) {
+          openEdit(Number(cardEl.dataset.id));
+        }
+      });
+
+      cardForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        clearErrors();
+        const title = cardForm.elements.title.value.trim();
+        const description = cardForm.elements.description.value;
+        const priority = cardForm.querySelector('input[name="priority"]:checked')?.value;
+        const dueDate = cardForm.elements.dueDate.value;
+        const columnId = cardForm.elements.columnId.value;
+
+        let ok = true;
+        if (!title) { setError("field-title", "タイトルは必須です。"); ok = false; }
+        else if (title.length > 100) { setError("field-title", "タイトルは100文字以内で入力してください。"); ok = false; }
+        if (description.length > 1000) { setError("field-desc", "説明は1000文字以内で入力してください。"); ok = false; }
+        if (!ok) return;
+
+        if (editingId == null) {
+          const newCard = { id: nextId++, columnId, title, description, priority, dueDate };
+          // 同カラム内で、自分より優先度が低い最初のカードの直前に挿入
+          const sameCol = cards.map((c, i) => ({ c, i })).filter(({ c }) => c.columnId === columnId);
+          const insertBefore = sameCol.find(({ c }) => PRIORITY_ORDER[c.priority] > PRIORITY_ORDER[priority]);
+          if (insertBefore) cards.splice(insertBefore.i, 0, newCard);
+          else cards.push(newCard);
+        } else {
+          const c = cards.find((x) => x.id === editingId);
+          Object.assign(c, { title, description, priority, dueDate, columnId });
+        }
+        closeAllModals();
+        render();
+      });
+
+      btnDelete.addEventListener("click", () => {
+        pendingDeleteId = editingId;
+        deleteDialog.classList.add("is-open");
+      });
+
+      document.getElementById("btn-confirm-delete").addEventListener("click", () => {
+        cards = cards.filter((c) => c.id !== pendingDeleteId);
+        pendingDeleteId = null;
+        closeAllModals();
+        render();
+      });
+
+      document.addEventListener("click", (e) => {
+        if (e.target.matches("[data-close-modal]") || e.target.closest("[data-close-modal]")) {
+          const m = e.target.closest(".modal");
+          if (m) m.classList.remove("is-open");
+        }
+        // オーバーレイ（モーダル背景）クリックで閉じる
+        if (e.target.classList.contains("modal")) {
+          e.target.classList.remove("is-open");
+        }
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeAllModals();
+      });
+
+      // ===== ドラッグ&ドロップ =====
+      let draggingId = null;
+
+      board.addEventListener("dragstart", (e) => {
+        const card = e.target.closest(".card");
+        if (!card) return;
+        draggingId = Number(card.dataset.id);
+        card.classList.add("is-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(draggingId));
+      });
+
+      board.addEventListener("dragend", () => {
+        draggingId = null;
+        clearDropMarkers();
+        document.querySelectorAll(".card.is-dragging").forEach((c) => c.classList.remove("is-dragging"));
+      });
+
+      function clearDropMarkers() {
+        document.querySelectorAll(".is-drop-target, .is-drop-before, .is-drop-after")
+          .forEach((el) => el.classList.remove("is-drop-target", "is-drop-before", "is-drop-after"));
+      }
+
+      board.addEventListener("dragover", (e) => {
+        if (draggingId == null) return;
+        const overCard = e.target.closest(".card");
+        const overList = e.target.closest(".column__list");
+        const overEmpty = e.target.closest(".column__empty");
+        if (!overCard && !overList && !overEmpty) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        clearDropMarkers();
+        if (overCard && Number(overCard.dataset.id) !== draggingId) {
+          const rect = overCard.getBoundingClientRect();
+          const before = e.clientY < rect.top + rect.height / 2;
+          overCard.classList.add(before ? "is-drop-before" : "is-drop-after");
+        } else if (overEmpty) {
+          overEmpty.classList.add("is-drop-target");
+        } else if (overList) {
+          overList.classList.add("is-drop-target");
+        }
+      });
+
+      board.addEventListener("drop", (e) => {
+        if (draggingId == null) return;
+        e.preventDefault();
+        const overCard = e.target.closest(".card");
+        const overList = e.target.closest(".column__list");
+        const overEmpty = e.target.closest(".column__empty");
+        const dragging = cards.find((c) => c.id === draggingId);
+        if (!dragging) return;
+
+        // 移動元から外す
+        cards = cards.filter((c) => c.id !== draggingId);
+
+        if (overCard && Number(overCard.dataset.id) !== draggingId) {
+          const targetId = Number(overCard.dataset.id);
+          const targetIdx = cards.findIndex((c) => c.id === targetId);
+          const rect = overCard.getBoundingClientRect();
+          const before = e.clientY < rect.top + rect.height / 2;
+          dragging.columnId = cards[targetIdx].columnId;
+          cards.splice(before ? targetIdx : targetIdx + 1, 0, dragging);
+        } else if (overEmpty) {
+          dragging.columnId = overEmpty.dataset.emptyCol;
+          cards.push(dragging);
+        } else if (overList) {
+          dragging.columnId = overList.dataset.listCol;
+          cards.push(dragging);
+        } else {
+          cards.push(dragging); // 念のため復帰
+        }
+        clearDropMarkers();
+        draggingId = null;
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>

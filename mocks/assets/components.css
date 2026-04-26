@@ -1,0 +1,351 @@
+/* Column */
+.column {
+  background: var(--surface-sub);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 200px;
+}
+
+.column__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.column__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  font-size: var(--font-base);
+}
+
+.column__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.column__empty {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  text-align: center;
+  padding: var(--space-5) 0;
+}
+
+/* Card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: border-color 0.1s ease;
+}
+
+.card:hover {
+  border-color: #c5cad1;
+}
+
+.card.is-dragging {
+  opacity: 0.4;
+}
+
+.column__list.is-drop-target {
+  outline: 2px dashed var(--primary);
+  outline-offset: -4px;
+  border-radius: var(--radius-sm);
+  min-height: 40px;
+}
+
+.column__empty.is-drop-target {
+  outline: 2px dashed var(--primary);
+  outline-offset: -4px;
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+}
+
+.card.is-drop-before {
+  box-shadow: -2px 0 0 var(--primary), 0 -2px 0 var(--primary);
+  position: relative;
+}
+.card.is-drop-before::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -4px;
+  height: 2px;
+  background: var(--primary);
+}
+.card.is-drop-after::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -4px;
+  height: 2px;
+  background: var(--primary);
+}
+.card.is-drop-after { position: relative; }
+
+.card__title {
+  font-size: var(--font-base);
+  font-weight: 500;
+  color: var(--text);
+}
+
+.card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: var(--font-sm);
+  color: var(--text-sub);
+}
+
+.card__due {
+  font-size: var(--font-sm);
+  color: var(--text-sub);
+}
+
+.card__due--overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: var(--font-sm);
+  background: var(--surface);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+  line-height: 1.4;
+}
+
+.badge--count {
+  min-width: 22px;
+  justify-content: center;
+}
+
+.badge--priority-high {
+  background: var(--priority-high-bg);
+  color: var(--priority-high-fg);
+  border-color: transparent;
+}
+
+.badge--priority-mid {
+  background: var(--priority-mid-bg);
+  color: var(--priority-mid-fg);
+  border-color: transparent;
+}
+
+.badge--priority-low {
+  background: var(--priority-low-bg);
+  color: var(--priority-low-fg);
+  border-color: transparent;
+}
+
+/* Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  border: 1px solid transparent;
+  transition: background 0.1s ease;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn--secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn--secondary:hover {
+  background: var(--surface-sub);
+}
+
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-sub);
+  font-size: var(--font-sm);
+  padding: 4px var(--space-2);
+}
+
+.btn--ghost:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 100;
+}
+
+.modal.is-open {
+  display: flex;
+}
+
+.modal__dialog {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal__dialog--sm {
+  max-width: 380px;
+}
+
+.modal__header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal__title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+}
+
+.modal__close {
+  font-size: 20px;
+  color: var(--text-sub);
+  line-height: 1;
+}
+
+.modal__body {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.modal__footer {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.modal__footer--split {
+  justify-content: space-between;
+}
+
+/* FormField */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field__label {
+  font-size: var(--font-sm);
+  color: var(--text-sub);
+  font-weight: 500;
+}
+
+.field__label .required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.field__input,
+.field__textarea,
+.field__select {
+  width: 100%;
+  padding: 6px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.field__input:focus,
+.field__textarea:focus,
+.field__select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.field--error .field__input,
+.field--error .field__textarea {
+  border-color: var(--danger);
+}
+
+.field__textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.field__error {
+  color: var(--danger);
+  font-size: var(--font-sm);
+}
+
+.field__radio-group {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.field__radio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-base);
+}
+
+/* Confirm dialog */
+.confirm__message {
+  font-size: var(--font-base);
+  color: var(--text);
+  line-height: 1.6;
+}
