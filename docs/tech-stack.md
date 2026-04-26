@@ -1,11 +1,25 @@
-# 技術スタック（予定）
+# 技術スタック
 
 | 分類 | 採用技術 |
 |---|---|
-| フロントエンド | React + TypeScript |
-| ビルドツール | Vite |
+| フロントエンド | React + TypeScript（Next.js は使用しない） |
+| ビルドツール (FE) | Vite |
 | ドラッグ＆ドロップ | @dnd-kit/core |
-| スタイリング | Tailwind CSS（予定） |
-| バックエンド | 未定（後続の技術選定で決定） |
-| DB | 未定（リレーショナルDB。後続の技術選定で決定） |
-| ORM | 未定 |
+| スタイリング | Tailwind CSS |
+| HTTPクライアント | Axios |
+| Lint / Format (FE) | ESLint + Prettier |
+| テスト (FE) | Vitest + React Testing Library |
+| バックエンド | Java 21 (LTS) + Spring Boot 3.x |
+| API 形式 | REST（spring-boot-starter-web） |
+| バリデーション | spring-boot-starter-validation (Jakarta Bean Validation) |
+| ORM | Spring Data JPA (Hibernate) |
+| DB マイグレーション | Flyway |
+| DB | PostgreSQL 16 |
+| ビルドツール (BE) | Gradle (Kotlin DSL) |
+| テスト (BE) | JUnit 5 + Spring Boot Test + Testcontainers (PostgreSQL) |
+| ローカル実行環境 | Docker Compose（PostgreSQL を起動） |
+
+## 補足
+- Spring Boot 3.x は Java 17 以上が必須のため、LTS 最新の Java 21 を採用。
+- DB アクセスのテストは Testcontainers により実 PostgreSQL を立ち上げて検証する。
+- マイグレーションは Spring Boot との親和性から Flyway を採用。
