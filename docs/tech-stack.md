@@ -9,7 +9,7 @@
 | HTTPクライアント | Axios |
 | Lint / Format (FE) | ESLint + Prettier |
 | テスト (FE) | Vitest + React Testing Library |
-| バックエンド | Java 21 (LTS) + Spring Boot 3.x |
+| バックエンド | Java 25 (LTS) + Spring Boot 4.0.x |
 | API 形式 | REST（spring-boot-starter-web） |
 | バリデーション | spring-boot-starter-validation (Jakarta Bean Validation) |
 | ORM | Spring Data JPA (Hibernate) |
@@ -20,6 +20,6 @@
 | ローカル実行環境 | Docker Compose（PostgreSQL を起動） |
 
 ## 補足
-- Spring Boot 3.x は Java 17 以上が必須のため、LTS 最新の Java 21 を採用。
+- Java は 2025年9月リリースの最新 LTS である Java 25 を採用。Spring Boot は 2025年11月 GA の最新メジャー 4.0.x を採用。
 - DB アクセスのテストは Testcontainers により実 PostgreSQL を立ち上げて検証する。
 - マイグレーションは Spring Boot との親和性から Flyway を採用。
