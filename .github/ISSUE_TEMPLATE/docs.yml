@@ -1,0 +1,22 @@
+name: "📝 Docs / ドキュメント"
+description: ドキュメントの追加・修正
+title: "[Docs] "
+labels: ["docs"]
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: 対象ドキュメント
+      description: README / docs/xxx.md など
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: 変更内容
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: 理由

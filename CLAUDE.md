@@ -1,0 +1,62 @@
+# TaskManagement 運用ルール (Claude Code 用)
+
+このリポジトリで Claude Code が作業するとき、および人間の開発者が作業するときの運用ルール。
+
+## 大原則
+
+- **`main` に直接 push しない**。常に Issue → ブランチ → PR → マージ の順。
+- 作業開始前に必ず **Issue を起票** する。コードを書き始める前に Issue 番号を取得すること。
+- 1 Issue = 1 ブランチ = 1 PR を基本とする。
+
+## ブランチ命名規則
+
+形式: `<type>/#<issue>-<slug>`
+
+例:
+- `feat/#12-add-login-form`
+- `fix/#34-card-delete-500`
+- `docs/#7-update-readme`
+
+| type | 用途 |
+| --- | --- |
+| `feat` | 新機能追加 |
+| `fix` | バグ修正 |
+| `docs` | ドキュメントのみの変更 |
+| `refactor` | 振る舞いを変えないリファクタ |
+| `chore` | ビルド・依存・設定など雑務 |
+| `test` | テスト追加・修正 |
+
+- `#<issue>` は紐づく Issue 番号 (必須)
+- `<slug>` は半角英小文字 + ハイフンの短い説明
+
+## Issue 起票
+
+新しい作業は GitHub の Issue テンプレートから起票する。
+
+- Feature / Bug / Task / Docs の 4 種類
+- 空 Issue (blank) は無効化されている
+
+## Pull Request 規約
+
+- PR 本文に `Closes #<issue>` を必ず含める (マージ時に Issue が自動クローズされる)
+- PR 上のレビューコメント / 会話は **全解決してからマージ** (GitHub 側で強制)
+- マージ方式は **squash または rebase のみ** (merge commit 禁止 / 線形履歴必須)
+- マージ後はブランチを自動削除する設定
+
+## main ブランチ保護 (GitHub 側で強制されている内容)
+
+- 直接 push 禁止 (PR 必須)
+- 会話解決必須
+- 線形履歴必須
+- force push 禁止 / ブランチ削除禁止
+- 管理者にも適用
+
+## Claude Code への指示
+
+ユーザーから作業を依頼されたときは、以下のフローを踏むこと。
+
+1. 該当する Issue が無ければ、適切なテンプレートで Issue を作成する (`gh issue create`)
+2. 上記命名規則に従ってブランチを切る
+3. 変更をコミットして push
+4. `gh pr create` で PR を作成し、本文に `Closes #<issue>` を入れる
+5. `main` への直接コミット / push は絶対に行わない
