@@ -1,0 +1,30 @@
+name: "🛠 Task / 作業タスク"
+description: リファクタ・調査・運用作業など
+title: "[Task] "
+labels: ["task"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 背景・目的
+    validations:
+      required: true
+  - type: textarea
+    id: todo
+    attributes:
+      label: 作業項目
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 補足
