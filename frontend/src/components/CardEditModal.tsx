@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { deleteCard, updateCardContent, updateCardPosition } from '../api/cards';
+import { deleteCard, updateCard } from '../api/cards';
 import { COLUMNS, type Card, type ColumnId, type Priority } from '../types/card';
 
 const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
@@ -42,18 +42,15 @@ export default function CardEditModal({ card, cardCountsByColumn, onClose, onSav
     setSubmitting(true);
     setError(null);
     try {
-      let updated = await updateCardContent(card.id, {
+      const updated = await updateCard(card.id, {
         title: title.trim(),
         description,
         priority,
         dueDate: dueDate ? dueDate : null,
+        ...(columnId !== card.columnId
+          ? { columnId, orderIndex: cardCountsByColumn[columnId] }
+          : {}),
       });
-      if (columnId !== card.columnId) {
-        updated = await updateCardPosition(card.id, {
-          columnId,
-          orderIndex: cardCountsByColumn[columnId],
-        });
-      }
       onSaved(updated);
       onClose();
     } catch (err) {

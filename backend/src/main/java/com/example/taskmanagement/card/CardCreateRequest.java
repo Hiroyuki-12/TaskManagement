@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-
 import java.time.LocalDate;
 
 public record CardCreateRequest(
@@ -13,5 +12,4 @@ public record CardCreateRequest(
         @Pattern(regexp = "high|medium|low") String priority,
         LocalDate dueDate,
         @NotBlank @Pattern(regexp = "todo|doing|done") String columnId,
-        @NotNull Integer orderIndex
-) {}
+        @NotNull Integer orderIndex) {}

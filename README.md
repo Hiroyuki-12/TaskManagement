@@ -94,10 +94,13 @@ npm run dev
 | `frontend/` | `npm run dev` | 開発サーバ起動 |
 | `frontend/` | `npm run build` | 型チェック + プロダクションビルド |
 | `frontend/` | `npm run lint` | ESLint 実行 |
+| `frontend/` | `npm run typecheck` | TypeScript 型チェック (`tsc -b --noEmit`) |
 | `frontend/` | `npm run format` | Prettier 整形 |
 | `backend/` | `./gradlew bootRun` | アプリ起動 |
 | `backend/` | `./gradlew test` | テスト実行 |
-| `backend/` | `./gradlew build` | ビルド |
+| `backend/` | `./gradlew spotlessCheck` | コードフォーマット検査 (Spotless / google-java-format) |
+| `backend/` | `./gradlew spotlessApply` | コードフォーマット自動修正 |
+| `backend/` | `./gradlew build` | ビルド (Spotless / テスト含む) |
 | ルート | `docker compose up -d` | PostgreSQL 起動 |
 | ルート | `docker compose down` | PostgreSQL 停止 |
 

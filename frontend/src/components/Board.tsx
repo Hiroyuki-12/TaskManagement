@@ -10,7 +10,7 @@ import {
 import {
   createCard,
   fetchCards,
-  updateCardPosition,
+  updateCard,
   type CardCreateInput,
 } from '../api/cards';
 import { COLUMNS, type Card, type ColumnId } from '../types/card';
@@ -158,7 +158,7 @@ export default function Board() {
     }
 
     try {
-      await updateCardPosition(cardId, { columnId: toColumn, orderIndex: targetIndex });
+      await updateCard(cardId, { columnId: toColumn, orderIndex: targetIndex });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'カードの移動に失敗しました');
       setData(prevData);
@@ -202,7 +202,7 @@ export default function Board() {
     });
     try {
       for (let i = 0; i < sorted.length; i++) {
-        await updateCardPosition(sorted[i].id, { columnId, orderIndex: i });
+        await updateCard(sorted[i].id, { columnId, orderIndex: i });
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'カードの並び替えに失敗しました');
