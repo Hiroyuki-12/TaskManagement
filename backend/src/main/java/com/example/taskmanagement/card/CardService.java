@@ -90,6 +90,22 @@ public class CardService {
         return repository.save(card);
     }
 
+    public void delete(String id) {
+        Card card = repository.findById(id)
+                .orElseThrow(() -> new CardNotFoundException(id));
+        String columnId = card.getColumnId();
+        repository.delete(card);
+
+        List<Card> siblings = repository.findByColumnIdOrderByOrderIndexAsc(columnId);
+        for (int i = 0; i < siblings.size(); i++) {
+            Card c = siblings.get(i);
+            if (c.getOrderIndex() == null || c.getOrderIndex() != i) {
+                c.setOrderIndex(i);
+                repository.save(c);
+            }
+        }
+    }
+
     public Card create(CardCreateRequest request) {
         Card card = new Card();
         card.setTitle(request.title());
