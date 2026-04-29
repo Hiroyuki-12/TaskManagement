@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { updateCardContent } from '../api/cards';
-import type { Card, Priority } from '../types/card';
+import { updateCardContent, updateCardPosition } from '../api/cards';
+import { COLUMNS, type Card, type ColumnId, type Priority } from '../types/card';
 
 const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
   { value: 'high', label: '高' },
@@ -10,15 +10,17 @@ const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
 
 interface Props {
   card: Card;
+  cardCountsByColumn: Record<ColumnId, number>;
   onClose: () => void;
   onSaved: (card: Card) => void;
 }
 
-export default function CardEditModal({ card, onClose, onSaved }: Props) {
+export default function CardEditModal({ card, cardCountsByColumn, onClose, onSaved }: Props) {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description ?? '');
   const [priority, setPriority] = useState<Priority>(card.priority);
   const [dueDate, setDueDate] = useState<string>(card.dueDate ?? '');
+  const [columnId, setColumnId] = useState<ColumnId>(card.columnId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,12 +41,18 @@ export default function CardEditModal({ card, onClose, onSaved }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      const updated = await updateCardContent(card.id, {
+      let updated = await updateCardContent(card.id, {
         title: title.trim(),
         description,
         priority,
         dueDate: dueDate ? dueDate : null,
       });
+      if (columnId !== card.columnId) {
+        updated = await updateCardPosition(card.id, {
+          columnId,
+          orderIndex: cardCountsByColumn[columnId],
+        });
+      }
       onSaved(updated);
       onClose();
     } catch (err) {
@@ -85,6 +93,20 @@ export default function CardEditModal({ card, onClose, onSaved }: Props) {
               rows={5}
               className="rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
             />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-gray-700">ステータス</span>
+            <select
+              value={columnId}
+              onChange={(e) => setColumnId(e.target.value as ColumnId)}
+              className="rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+            >
+              {COLUMNS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
           </label>
           <div className="flex gap-3">
             <label className="flex flex-1 flex-col gap-1 text-sm">
