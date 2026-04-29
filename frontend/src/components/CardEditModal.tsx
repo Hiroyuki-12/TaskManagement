@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { updateCardContent, updateCardPosition } from '../api/cards';
+import { deleteCard, updateCardContent, updateCardPosition } from '../api/cards';
 import { COLUMNS, type Card, type ColumnId, type Priority } from '../types/card';
 
 const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
@@ -13,9 +13,10 @@ interface Props {
   cardCountsByColumn: Record<ColumnId, number>;
   onClose: () => void;
   onSaved: (card: Card) => void;
+  onDeleted: (cardId: string) => void;
 }
 
-export default function CardEditModal({ card, cardCountsByColumn, onClose, onSaved }: Props) {
+export default function CardEditModal({ card, cardCountsByColumn, onClose, onSaved, onDeleted }: Props) {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description ?? '');
   const [priority, setPriority] = useState<Priority>(card.priority);
@@ -58,6 +59,20 @@ export default function CardEditModal({ card, cardCountsByColumn, onClose, onSav
     } catch (err) {
       setError(err instanceof Error ? err.message : '更新に失敗しました');
     } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('このカードを削除しますか？')) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await deleteCard(card.id);
+      onDeleted(card.id);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '削除に失敗しました');
       setSubmitting(false);
     }
   };
@@ -138,7 +153,16 @@ export default function CardEditModal({ card, cardCountsByColumn, onClose, onSav
               {error}
             </p>
           )}
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="rounded border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
+              disabled={submitting}
+            >
+              削除
+            </button>
+            <div className="flex gap-2">
             <button
               type="button"
               onClick={onClose}
@@ -154,6 +178,7 @@ export default function CardEditModal({ card, cardCountsByColumn, onClose, onSav
             >
               {submitting ? '保存中…' : '保存'}
             </button>
+            </div>
           </div>
         </form>
       </div>

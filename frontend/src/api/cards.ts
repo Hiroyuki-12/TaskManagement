@@ -49,3 +49,7 @@ export async function updateCardPosition(
   const res = await apiClient.patch<Card>(`/cards/${id}/position`, input);
   return res.data;
 }
+
+export async function deleteCard(id: string): Promise<void> {
+  await apiClient.delete(`/cards/${id}`);
+}
