@@ -36,3 +36,16 @@ export async function updateCardContent(
   const res = await apiClient.put<Card>(`/cards/${id}`, input);
   return res.data;
 }
+
+export interface UpdateCardPositionInput {
+  columnId: ColumnId;
+  orderIndex: number;
+}
+
+export async function updateCardPosition(
+  id: string,
+  input: UpdateCardPositionInput,
+): Promise<Card> {
+  const res = await apiClient.patch<Card>(`/cards/${id}/position`, input);
+  return res.data;
+}

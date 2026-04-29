@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,5 +47,10 @@ public class CardController {
     @PutMapping("/{id}")
     public Card updateContent(@PathVariable String id, @Valid @RequestBody UpdateCardContentRequest request) {
         return service.updateContent(id, request);
+    }
+
+    @PatchMapping("/{id}/position")
+    public Card updatePosition(@PathVariable String id, @Valid @RequestBody UpdateCardPositionRequest request) {
+        return service.updatePosition(id, request);
     }
 }

@@ -31,6 +31,55 @@ public class CardService {
                 .orElseThrow(() -> new CardNotFoundException(id));
     }
 
+    public Card updatePosition(String id, UpdateCardPositionRequest request) {
+        Card card = repository.findById(id)
+                .orElseThrow(() -> new CardNotFoundException(id));
+
+        String fromColumnId = card.getColumnId();
+        String toColumnId = request.columnId();
+        int targetIndex = request.orderIndex();
+
+        if (fromColumnId.equals(toColumnId)) {
+            List<Card> siblings = repository.findByColumnIdOrderByOrderIndexAsc(toColumnId).stream()
+                    .filter(c -> !c.getId().equals(id))
+                    .collect(java.util.stream.Collectors.toList());
+            int insertAt = Math.min(targetIndex, siblings.size());
+            siblings.add(insertAt, card);
+            for (int i = 0; i < siblings.size(); i++) {
+                Card c = siblings.get(i);
+                if (c.getOrderIndex() == null || c.getOrderIndex() != i) {
+                    c.setOrderIndex(i);
+                    repository.save(c);
+                }
+            }
+            return card;
+        }
+
+        List<Card> fromSiblings = repository.findByColumnIdOrderByOrderIndexAsc(fromColumnId).stream()
+                .filter(c -> !c.getId().equals(id))
+                .collect(java.util.stream.Collectors.toList());
+        for (int i = 0; i < fromSiblings.size(); i++) {
+            Card c = fromSiblings.get(i);
+            if (c.getOrderIndex() == null || c.getOrderIndex() != i) {
+                c.setOrderIndex(i);
+                repository.save(c);
+            }
+        }
+
+        List<Card> toSiblings = repository.findByColumnIdOrderByOrderIndexAsc(toColumnId);
+        int insertAt = Math.min(targetIndex, toSiblings.size());
+        card.setColumnId(toColumnId);
+        toSiblings.add(insertAt, card);
+        for (int i = 0; i < toSiblings.size(); i++) {
+            Card c = toSiblings.get(i);
+            if (c.getOrderIndex() == null || c.getOrderIndex() != i) {
+                c.setOrderIndex(i);
+                repository.save(c);
+            }
+        }
+        return card;
+    }
+
     public Card updateContent(String id, UpdateCardContentRequest request) {
         Card card = repository.findById(id)
                 .orElseThrow(() -> new CardNotFoundException(id));
