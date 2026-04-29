@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,5 +41,10 @@ public class CardController {
     public ResponseEntity<Card> create(@Valid @RequestBody CardCreateRequest request) {
         Card saved = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    @PutMapping("/{id}")
+    public Card updateContent(@PathVariable String id, @Valid @RequestBody UpdateCardContentRequest request) {
+        return service.updateContent(id, request);
     }
 }

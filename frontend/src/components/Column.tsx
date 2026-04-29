@@ -12,9 +12,10 @@ interface Props {
     columnId: ColumnId,
     input: Omit<CardCreateInput, 'columnId' | 'orderIndex'>,
   ) => Promise<void>;
+  onCardClick?: (card: Card) => void;
 }
 
-export default function Column({ columnId, label, cards, onCreate }: Props) {
+export default function Column({ columnId, label, cards, onCreate, onCardClick }: Props) {
   const [adding, setAdding] = useState(false);
 
   const handleSubmit = async (
@@ -44,7 +45,7 @@ export default function Column({ columnId, label, cards, onCreate }: Props) {
         {cards.length === 0 && !adding ? (
           <p className="py-6 text-center text-sm text-gray-400">カードがありません</p>
         ) : (
-          cards.map((c) => <CardItem key={c.id} card={c} />)
+          cards.map((c) => <CardItem key={c.id} card={c} onClick={onCardClick} />)
         )}
         {adding && (
           <CardCreateForm

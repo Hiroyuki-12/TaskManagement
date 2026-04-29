@@ -9,9 +9,17 @@ function isOverdue(dueDate: string): boolean {
   return due < today;
 }
 
-export default function CardItem({ card }: { card: Card }) {
+interface Props {
+  card: Card;
+  onClick?: (card: Card) => void;
+}
+
+export default function CardItem({ card, onClick }: Props) {
   return (
-    <article className="rounded-md border border-gray-200 bg-white p-3 shadow-sm">
+    <article
+      className="cursor-pointer rounded-md border border-gray-200 bg-white p-3 shadow-sm hover:border-blue-300 hover:shadow"
+      onClick={() => onClick?.(card)}
+    >
       <h3 className="mb-2 text-sm font-medium text-gray-900">{card.title}</h3>
       <div className="flex items-center justify-between">
         <PriorityBadge priority={card.priority} />
