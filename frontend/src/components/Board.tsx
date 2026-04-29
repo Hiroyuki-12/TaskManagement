@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchCards } from '../api/cards';
+import { createCard, fetchCards, type CardCreateInput } from '../api/cards';
 import { COLUMNS, type Card, type ColumnId } from '../types/card';
 import Column from './Column';
 
@@ -34,6 +34,28 @@ export default function Board() {
     };
   }, []);
 
+  const handleCreate = async (
+    columnId: ColumnId,
+    input: Omit<CardCreateInput, 'columnId' | 'orderIndex'>,
+  ) => {
+    try {
+      const created = await createCard({
+        ...input,
+        columnId,
+        orderIndex: data[columnId].length,
+      });
+      setData((prev) => ({
+        ...prev,
+        [columnId]: [...prev[columnId], created],
+      }));
+      setError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'カードの登録に失敗しました';
+      setError(msg);
+      throw e instanceof Error ? e : new Error(msg);
+    }
+  };
+
   if (loading) {
     return <p className="text-sm text-gray-500">読み込み中…</p>;
   }
@@ -47,7 +69,13 @@ export default function Board() {
       )}
       <div className="flex gap-4 overflow-x-auto">
         {COLUMNS.map((c) => (
-          <Column key={c.id} label={c.label} cards={data[c.id]} />
+          <Column
+            key={c.id}
+            columnId={c.id}
+            label={c.label}
+            cards={data[c.id]}
+            onCreate={handleCreate}
+          />
         ))}
       </div>
     </div>
