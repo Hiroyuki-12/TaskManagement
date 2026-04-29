@@ -31,6 +31,16 @@ public class CardService {
                 .orElseThrow(() -> new CardNotFoundException(id));
     }
 
+    public Card updateContent(String id, UpdateCardContentRequest request) {
+        Card card = repository.findById(id)
+                .orElseThrow(() -> new CardNotFoundException(id));
+        card.setTitle(request.title());
+        card.setDescription(request.description());
+        card.setPriority(request.priority());
+        card.setDueDate(request.dueDate());
+        return repository.save(card);
+    }
+
     public Card create(CardCreateRequest request) {
         Card card = new Card();
         card.setTitle(request.title());

@@ -21,3 +21,18 @@ export async function createCard(input: CardCreateInput): Promise<Card> {
   const res = await apiClient.post<Card>('/cards', input);
   return res.data;
 }
+
+export interface UpdateCardContentInput {
+  title: string;
+  description: string;
+  priority: Priority;
+  dueDate: string | null;
+}
+
+export async function updateCardContent(
+  id: string,
+  input: UpdateCardContentInput,
+): Promise<Card> {
+  const res = await apiClient.put<Card>(`/cards/${id}`, input);
+  return res.data;
+}

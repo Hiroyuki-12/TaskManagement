@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createCard, fetchCards, type CardCreateInput } from '../api/cards';
 import { COLUMNS, type Card, type ColumnId } from '../types/card';
+import CardEditModal from './CardEditModal';
 import Column from './Column';
 
 type CardsByColumn = Record<ColumnId, Card[]>;
@@ -11,6 +12,16 @@ export default function Board() {
   const [data, setData] = useState<CardsByColumn>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Card | null>(null);
+
+  const handleCardSaved = (updated: Card) => {
+    setData((prev) => ({
+      ...prev,
+      [updated.columnId]: prev[updated.columnId]
+        .map((c) => (c.id === updated.id ? updated : c))
+        .sort((a, b) => a.orderIndex - b.orderIndex),
+    }));
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -75,9 +86,17 @@ export default function Board() {
             label={c.label}
             cards={data[c.id]}
             onCreate={handleCreate}
+            onCardClick={setEditing}
           />
         ))}
       </div>
+      {editing && (
+        <CardEditModal
+          card={editing}
+          onClose={() => setEditing(null)}
+          onSaved={handleCardSaved}
+        />
+      )}
     </div>
   );
 }
