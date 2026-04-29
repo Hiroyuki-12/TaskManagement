@@ -37,12 +37,16 @@ export default function Board() {
   const [editing, setEditing] = useState<Card | null>(null);
 
   const handleCardSaved = (updated: Card) => {
-    setData((prev) => ({
-      ...prev,
-      [updated.columnId]: prev[updated.columnId]
-        .map((c) => (c.id === updated.id ? updated : c))
-        .sort((a, b) => a.orderIndex - b.orderIndex),
-    }));
+    setData((prev) => {
+      const next: CardsByColumn = { todo: [], doing: [], done: [] };
+      for (const c of COLUMNS) {
+        next[c.id] = prev[c.id].filter((card) => card.id !== updated.id);
+      }
+      next[updated.columnId] = [...next[updated.columnId], updated].sort(
+        (a, b) => a.orderIndex - b.orderIndex,
+      );
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -248,6 +252,11 @@ export default function Board() {
       {editing && (
         <CardEditModal
           card={editing}
+          cardCountsByColumn={{
+            todo: data.todo.length,
+            doing: data.doing.length,
+            done: data.done.length,
+          }}
           onClose={() => setEditing(null)}
           onSaved={handleCardSaved}
         />
