@@ -22,31 +22,23 @@ export async function createCard(input: CardCreateInput): Promise<Card> {
   return res.data;
 }
 
-export interface UpdateCardContentInput {
-  title: string;
-  description: string;
-  priority: Priority;
-  dueDate: string | null;
+/**
+ * 部分更新リクエスト。送信したフィールドだけが更新される。
+ * - 内容更新: title / description / priority / dueDate
+ * - 位置更新: columnId / orderIndex
+ * - 編集モーダルからのステータス変更は columnId と内容を同時に送る
+ */
+export interface UpdateCardInput {
+  title?: string;
+  description?: string;
+  priority?: Priority;
+  dueDate?: string | null;
+  columnId?: ColumnId;
+  orderIndex?: number;
 }
 
-export async function updateCardContent(
-  id: string,
-  input: UpdateCardContentInput,
-): Promise<Card> {
-  const res = await apiClient.put<Card>(`/cards/${id}`, input);
-  return res.data;
-}
-
-export interface UpdateCardPositionInput {
-  columnId: ColumnId;
-  orderIndex: number;
-}
-
-export async function updateCardPosition(
-  id: string,
-  input: UpdateCardPositionInput,
-): Promise<Card> {
-  const res = await apiClient.patch<Card>(`/cards/${id}/position`, input);
+export async function updateCard(id: string, input: UpdateCardInput): Promise<Card> {
+  const res = await apiClient.patch<Card>(`/cards/${id}`, input);
   return res.data;
 }
 
