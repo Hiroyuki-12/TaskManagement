@@ -18,7 +18,7 @@ DOCKER_CONFIG_DIR=/usr/libexec/docker/cli-plugins
 mkdir -p "$DOCKER_CONFIG_DIR"
 COMPOSE_VERSION="v2.29.7"
 ARCH="$(uname -m)"
-curl -sSL "https://github.com/docker/compose/releases/download/$${COMPOSE_VERSION}/docker-compose-linux-$${ARCH}" \
+curl -sSL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-${ARCH}" \
   -o "$DOCKER_CONFIG_DIR/docker-compose"
 chmod +x "$DOCKER_CONFIG_DIR/docker-compose"
 
