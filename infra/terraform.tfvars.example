@@ -1,0 +1,8 @@
+# このファイルを `terraform.tfvars` にコピーして自分の値を埋めてください。
+# `terraform.tfvars` は .gitignore で除外されています。
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#   # 自分のグローバル IP を確認:  curl -s https://checkip.amazonaws.com
+#   # 例: 203.0.113.10 → "203.0.113.10/32"
+
+my_ip = "0.0.0.0/32"
