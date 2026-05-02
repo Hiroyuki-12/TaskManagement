@@ -10,6 +10,12 @@ variable "region" {
   default     = "ap-northeast-1"
 }
 
+variable "environment" {
+  description = "リソースの Environment タグ (dev / prod など)"
+  type        = string
+  default     = "prod"
+}
+
 variable "my_ip" {
   description = "SSH 接続を許可する自宅 IP (CIDR 形式 例: 203.0.113.10/32)。terraform.tfvars で設定し Git にコミットしないこと"
   type        = string

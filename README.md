@@ -10,6 +10,7 @@ Trello 風のカンバン方式で個人のタスクを管理する Web アプ�
 - [技術スタック](#技術スタック)
 - [ローカル開発環境のセットアップ](#ローカル開発環境のセットアップ)
 - [ポート運用ルール](#ポート運用ルール)
+- [AWS デプロイ](#aws-デプロイ)
 - [ドキュメント一覧](#ドキュメント一覧)
 - [開発フロー](#開発フロー)
 
@@ -17,13 +18,16 @@ Trello 風のカンバン方式で個人のタスクを管理する Web アプ�
 
 ```
 TaskManagement/
-├── backend/        Spring Boot 4.0 + Java 25 (REST API)
-├── frontend/       React 19 + TypeScript + Vite + Tailwind CSS (SPA)
-├── compose.yaml    PostgreSQL 16 (ローカル開発用)
-├── docs/           設計・要件ドキュメント
-├── mocks/          モックデータ / 画面モック
-├── 要件定義書.md    要件定義のエントリポイント
-├── CLAUDE.md       Claude Code 用の運用ルール
+├── backend/             Spring Boot 4.0 + Java 25 (REST API)
+├── frontend/            React 19 + TypeScript + Vite + Tailwind CSS (SPA)
+├── infra/               Terraform: AWS デプロイ用 IaC
+├── compose.yaml         PostgreSQL 16 (ローカル開発用)
+├── compose.prod.yaml    本番想定の compose (EC2 / 同居検証)
+├── Makefile             ビルド & AWS デプロイのユーティリティ
+├── docs/                設計・要件・インフラ構成ドキュメント
+├── mocks/               モックデータ / 画面モック
+├── 要件定義書.md         要件定義のエントリポイント
+├── CLAUDE.md            Claude Code 用の運用ルール
 └── README.md
 ```
 
@@ -50,7 +54,12 @@ TaskManagement/
 
 ### データベース / インフラ
 
-- PostgreSQL 16 (Docker Compose)
+- PostgreSQL 16
+  - ローカル開発: Docker Compose
+  - AWS デプロイ時: RDS db.t3.micro
+- AWS デプロイ: EC2 t2.micro + Nginx + RDS (詳細は [docs/aws-architecture.md](docs/aws-architecture.md))
+- IaC: Terraform 1.6+ (`infra/`)
+- 成果物配布: GitHub Releases (`make release`)
 
 ## ローカル開発環境のセットアップ
 
@@ -116,6 +125,26 @@ npm run dev
 
 ポートが競合した場合は、`lsof -i :<port>` で占有プロセスを特定して停止し、本来のポートで起動し直す。詳細は [CLAUDE.md](CLAUDE.md#ポート運用ルール厳守) を参照。
 
+## AWS デプロイ
+
+学習目的で本アプリを AWS 上で稼働させるための IaC を `infra/` に用意している (Terraform)。
+**完全に AWS 無料枠 ($0 運用) 前提**で、EC2 + Nginx + RDS というシンプル構成。
+
+- 構成図 / 設計判断: [docs/aws-architecture.md](docs/aws-architecture.md)
+- 初回セットアップ・運用コマンド: [infra/README.md](infra/README.md)
+
+主な運用コマンド (リポジトリルートの `Makefile`):
+
+| コマンド | やること |
+|---|---|
+| `make release` | JAR + frontend dist を GitHub Releases に upload |
+| `make deploy` | terraform apply (初回) |
+| `make redeploy` | EC2 を作り直して新成果物を取得 |
+| `make ssh` / `make logs` / `make status` | EC2 操作・状態確認 |
+| `make destroy` | 全リソース削除 (課題提出後の必須作業) |
+
+> 12 ヶ月の無料枠を超えると EC2 / RDS が課金対象。**使わなくなったら必ず `make destroy`** すること。
+
 ## ドキュメント一覧
 
 | 種別 | ドキュメント |
@@ -128,6 +157,8 @@ npm run dev
 | データフロー / API | [docs/data-flow.md](docs/data-flow.md) |
 | 非機能要件 | [docs/non-functional-requirements.md](docs/non-functional-requirements.md) |
 | 技術スタック | [docs/tech-stack.md](docs/tech-stack.md) |
+| AWS インフラ構成 | [docs/aws-architecture.md](docs/aws-architecture.md) |
+| AWS デプロイ操作手順 | [infra/README.md](infra/README.md) |
 | 対象外機能（スコープ外） | [docs/out-of-scope.md](docs/out-of-scope.md) |
 | 運用ルール (Claude Code 用) | [CLAUDE.md](CLAUDE.md) |
 
