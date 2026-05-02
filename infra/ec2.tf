@@ -26,8 +26,16 @@ resource "aws_instance" "app" {
   vpc_security_group_ids      = [aws_security_group.ec2.id]
   associate_public_ip_address = true
 
-  user_data                   = file("${path.module}/user_data.sh")
+  user_data = templatefile("${path.module}/user_data.sh.tpl", {
+    db_host     = aws_db_instance.main.address
+    db_port     = aws_db_instance.main.port
+    db_name     = var.db_name
+    db_username = var.db_username
+    db_password = var.db_password
+  })
   user_data_replace_on_change = true
+
+  depends_on = [aws_db_instance.main]
 
   metadata_options {
     http_tokens   = "required" # IMDSv2 必須
