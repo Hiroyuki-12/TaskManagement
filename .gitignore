@@ -37,8 +37,9 @@ tfplan
 # SSH private keys
 *.pem
 
-# Claude Code local state
-.claude/
+# Claude Code local state (skills のみチームで共有するため除外しない)
+.claude/*
+!.claude/skills/
 
 # Local release artifact
 frontend-dist.tar.gz
