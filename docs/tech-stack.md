@@ -44,6 +44,19 @@
 | RDB | PostgreSQL | 16 (alpine) |
 | ローカル実行環境 | Docker Compose | — |
 
+## AWS デプロイ (個人利用 / 無料枠)
+
+| 分類 | 採用技術 | 備考 |
+|---|---|---|
+| IaC | Terraform | 1.6+ (S3 backend + DynamoDB ロック) |
+| コンピューティング | EC2 t2.micro (Amazon Linux 2023) | 12ヶ月無料 |
+| マネージド DB | RDS db.t3.micro / PostgreSQL 16 | 12ヶ月無料 |
+| リバースプロキシ / 静的配信 | Nginx (AL2023 dnf パッケージ) | EC2 同居 |
+| ランタイム (バックエンド) | Docker / Eclipse Temurin 25 JRE | コンテナで実行 |
+| 成果物配布 | GitHub Releases (タグ `latest`) | 公開リポ・無料・無制限 |
+
+詳細な構成・設計判断は [aws-architecture.md](aws-architecture.md)、操作手順は [`../infra/README.md`](../infra/README.md) を参照。
+
 ## 補足
 
 - Java は 2025 年 9 月リリースの最新 LTS である Java 25 を採用。Spring Boot は 2025 年 11 月 GA の最新メジャー 4.0.x を採用。

@@ -2,39 +2,8 @@
 
 スクール課題向けの個人利用前提・**AWS 無料枠** で TaskManagement をデプロイするための Terraform 設定。
 
-## 構成 (Phase 2: RDS 切り出し済)
-
-```
-ユーザー ──HTTP/80──▶ ┌─────────────────────────────────┐
-                    │ EC2 t2.micro (Public Subnet, AZ-a)│
-                    │  ├─ Nginx (80)                    │
-                    │  │   ├─ /        → React 静的     │
-                    │  │   └─ /api/*  → :8080           │
-                    │  └─ Spring Boot (8080) Docker     │
-                    │  EBS gp3 8GB                      │
-                    └────────────┬─────────────────────┘
-                                 │ private DNS (5432)
-                                 ▼
-                    ┌─────────────────────────────────┐
-                    │ RDS db.t3.micro                 │
-                    │ PostgreSQL 16 / 20GB gp3        │
-                    │ (Private Subnets AZ-a, AZ-c)    │
-                    └─────────────────────────────────┘
-```
-
-| AWS リソース | 用途 | 課金 |
-|---|---|---|
-| VPC / Subnet / IGW / Route Table | ネットワーク | 無料 |
-| Security Group | 22 / 80 を `my_ip` のみ許可 | 無料 |
-| EC2 t2.micro | アプリ実行 | 750h/月 (12ヶ月) |
-| EBS gp3 8GB | EC2 ルートディスク | 30GB/月 (12ヶ月) |
-| RDS db.t3.micro | マネージド PostgreSQL | 750h/月 (12ヶ月) |
-| RDS gp3 20GB | DB ストレージ | 20GB (12ヶ月) |
-| S3 (tfstate) | Terraform 状態管理 | 5GB (12ヶ月) |
-| DynamoDB (tflock) | tfstate ロック | 25GB (Always Free) |
-| データ転送 out | EC2 → ネット | 100GB/月 (Always Free) |
-
-NAT Gateway / ALB / RDS / Route53 / Elastic IP は使わない (有料のため)。
+> **構成図・リソース選定理由・設計判断は [`../docs/aws-architecture.md`](../docs/aws-architecture.md) を参照。**
+> 本ファイルは初回セットアップ手順と日常運用コマンドに集中する。
 
 ## ディレクトリ
 

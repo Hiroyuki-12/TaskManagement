@@ -52,8 +52,9 @@ resource "aws_db_instance" "main" {
   publicly_accessible    = false
   multi_az               = false
 
-  backup_retention_period    = 1
-  skip_final_snapshot        = true
+  backup_retention_period = 1
+  skip_final_snapshot     = true
+  # 個人課題で destroy しやすくするため false。本番運用では true 推奨。
   deletion_protection        = false
   auto_minor_version_upgrade = true
   apply_immediately          = true
