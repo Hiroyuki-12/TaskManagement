@@ -36,3 +36,6 @@ tfplan
 
 # SSH private keys
 *.pem
+
+# Claude Code local state
+.claude/

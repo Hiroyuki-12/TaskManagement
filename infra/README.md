@@ -105,6 +105,32 @@ terraform init
 
 成功すれば `Terraform has been successfully initialized!` が表示される。
 
+### 5. 初回デプロイ (バックエンド JAR を GitHub Releases にアップロードしてから EC2 を作る)
+
+t2.micro 上で Gradle ビルドは重すぎるため、JAR は **ローカル Mac でビルド** して **GitHub Releases** に置き、EC2 はそれを取得する構成。
+
+リポジトリルートに用意した `Makefile` で 1 コマンド化されている:
+
+```bash
+# 1. JAR をビルド + GitHub Releases (タグ "latest") に upload
+make release
+
+# 2. EC2 を起動 (user_data が release から JAR を取得して compose up する)
+make deploy
+```
+
+`make release` 内部で実行されること:
+- `cd backend && ./gradlew bootJar`
+- `cp backend/build/libs/*.jar backend/app.jar`
+- `gh release create latest backend/app.jar` (初回) または `gh release upload latest --clobber` (2 回目以降)
+
+### 更新フロー (コード変更後)
+
+```bash
+make release         # 新しい JAR を release "latest" に上書き upload
+make redeploy        # EC2 を作り直して新 JAR を取得 (terraform apply -replace=aws_instance.app)
+```
+
 ## 後片付け (課題提出後・課金停止)
 
 ```bash
