@@ -39,3 +39,6 @@ tfplan
 
 # Claude Code local state
 .claude/
+
+# Local release artifact
+frontend-dist.tar.gz
