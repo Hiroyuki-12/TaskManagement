@@ -19,15 +19,6 @@ resource "aws_security_group" "ec2" {
     cidr_blocks = [var.my_ip]
   }
 
-  # 一時: Step #4 で API 動作確認用に開放。Step #5 で Nginx を入れたら削除する
-  ingress {
-    description = "Spring Boot API from my_ip (temporary, until Step #5)"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = [var.my_ip]
-  }
-
   egress {
     description = "All outbound"
     from_port   = 0
