@@ -1,52 +1,60 @@
 # infra/ — TaskManagement AWS デプロイ (Terraform)
 
-スクール課題向け・個人利用前提で、**AWS 無料枠($0 運用)** で TaskManagement をデプロイするための Terraform 設定。
+スクール課題向けの個人利用前提・**AWS 無料枠 ($0 運用)** で TaskManagement をデプロイするための Terraform 設定。
 
-## フェーズ全体像
+## 構成 (Phase 1)
 
 ```
-Phase 1: EC2 1台に Front+Back+DB 同居 (現在ここ)
-   ↓
-Phase 2: DB を RDS に切り出す
-   ↓
-Phase 3: フロントを S3 + CloudFront に切り出す
+ユーザー ──HTTP/80──▶ ┌──────────────────────────────────┐
+                    │ EC2 t2.micro (Public Subnet)      │
+                    │  ├─ Nginx (80)                    │
+                    │  │   ├─ /        → React 静的     │
+                    │  │   └─ /api/*  → :8080 にプロキシ│
+                    │  ├─ Spring Boot (8080) Docker     │
+                    │  └─ PostgreSQL (5432) Docker      │
+                    │  EBS gp3 8GB                      │
+                    └──────────────────────────────────┘
 ```
 
-詳細は GitHub Issue #26 (全体計画) を参照。
+| AWS リソース | 用途 | 課金 |
+|---|---|---|
+| VPC / Subnet / IGW / Route Table | ネットワーク | 無料 |
+| Security Group | 22 / 80 を `my_ip` のみ許可 | 無料 |
+| EC2 t2.micro | アプリ実行 | 750h/月 (12ヶ月) |
+| EBS gp3 8GB | EC2 ルートディスク | 30GB/月 (12ヶ月) |
+| S3 (tfstate) | Terraform 状態管理 | 5GB (12ヶ月) |
+| DynamoDB (tflock) | tfstate ロック | 25GB (Always Free) |
+| データ転送 out | EC2 → ネット | 100GB/月 (Always Free) |
 
-## このディレクトリの中身
+NAT Gateway / ALB / RDS / Route53 / Elastic IP は使わない (有料のため)。
+
+## ディレクトリ
 
 | ファイル | 役割 |
 |---|---|
-| `backend.tf` | tfstate を S3 + DynamoDB ロックで管理 (無料枠内) |
-| `providers.tf` | AWS プロバイダ (`ap-northeast-1`) と共通タグ |
-| `variables.tf` | 入力変数 (project / region / my_ip / key_name) |
-| `terraform.tfvars.example` | `terraform.tfvars` の雛形。自分の IP を埋める |
-
-> 後続ステップで `network.tf` `security.tf` `ec2.tf` `user_data.sh` などを追加していく。
-
-## なぜ S3 + DynamoDB を使うのか (tfstate 用)
-
-Terraform は「現在 AWS に何を作ったか」を `terraform.tfstate` というファイルで管理する。これを **S3 に保管 + DynamoDB でロック** することで以下を実現する:
-
-- 状態ファイルの紛失防止 (S3 のバージョニング有効)
-- 複数人 / 複数 PC からの同時更新による破損防止 (DynamoDB ロック)
-- 実務で標準的に使われるパターンの学習
-
-> S3 5GB / DynamoDB 25GB は **Always Free** 枠で課金されない。
+| `backend.tf` | tfstate を S3 + DynamoDB |
+| `providers.tf` | AWS provider, 共通タグ |
+| `variables.tf` | project / region / my_ip / key_name |
+| `network.tf` | VPC / IGW / public subnet / route table |
+| `security.tf` | EC2 用 SG (22 / 80 from my_ip) |
+| `ec2.tf` | EC2 t2.micro + EBS + AMI lookup |
+| `user_data.sh` | cloud-init: Docker / git / nginx 導入、release から JAR と dist 取得、起動 |
+| `nginx.conf` | / 静的配信 + /api/ → :8080 リバプロ |
+| `outputs.tf` | DNS / IP / SSH コマンド等を表示 |
+| `terraform.tfvars.example` | tfvars 雛形 (実体は Git 除外) |
 
 ## 前提
 
-ローカルに以下が揃っていること:
-- AWS CLI (`aws --version`)
-- Terraform 1.6 以上 (`terraform -version`)
-- `aws configure` で `ap-northeast-1` の IAM ユーザー認証情報を設定済み (`aws sts get-caller-identity` で確認)
+- AWS CLI (`aws sts get-caller-identity` で認証確認)
+- Terraform 1.6+
+- Docker Desktop (ローカル動作確認用)
+- Java 25 + Gradle (ローカルで JAR ビルド)
+- Node.js (ローカルで frontend ビルド)
+- GitHub CLI (`gh release` 用)
 
 ## 初回セットアップ手順
 
-### 1. tfstate 用の S3 バケットと DynamoDB テーブル
-
-Step #1 で AWS CLI から既に作成済み。再構築が必要な場合のみ以下を実行:
+### 1. tfstate 用 S3 / DynamoDB を作成 (1 回だけ)
 
 ```bash
 aws s3api create-bucket \
@@ -68,9 +76,9 @@ aws dynamodb create-table --table-name taskmanagement-tflock \
   --billing-mode PAY_PER_REQUEST --region ap-northeast-1
 ```
 
-### 2. EC2 用 SSH キーペアを作成 (ローカル + AWS)
+### 2. EC2 用 SSH キーペアを作成
 
-**秘密鍵をログに残さないため、自分の手で 1 度だけ実行する。**
+**チャットログに鍵を残さないため、自分の手元で実行する。**
 
 ```bash
 aws ec2 create-key-pair \
@@ -80,65 +88,56 @@ aws ec2 create-key-pair \
 chmod 400 ~/.ssh/taskmanagement-key.pem
 ```
 
-確認:
-```bash
-ls -l ~/.ssh/taskmanagement-key.pem
-aws ec2 describe-key-pairs --key-names taskmanagement-key --region ap-northeast-1
-```
-
-### 3. terraform.tfvars を作る
+### 3. terraform.tfvars を作る (Git 除外)
 
 ```bash
 cd infra
 cp terraform.tfvars.example terraform.tfvars
-# 自分のグローバル IP を確認
-curl -s https://checkip.amazonaws.com
-# terraform.tfvars の my_ip を "<上記IP>/32" に書き換える
+curl -s https://checkip.amazonaws.com    # 自分の IP を確認
+# my_ip を "<上記IP>/32" に書き換え
 ```
 
 ### 4. terraform init
 
 ```bash
-cd infra
-terraform init
+cd infra && terraform init
 ```
 
-成功すれば `Terraform has been successfully initialized!` が表示される。
+### 5. 初回デプロイ
 
-### 5. 初回デプロイ (バックエンド JAR を GitHub Releases にアップロードしてから EC2 を作る)
-
-t2.micro 上で Gradle ビルドは重すぎるため、JAR は **ローカル Mac でビルド** して **GitHub Releases** に置き、EC2 はそれを取得する構成。
-
-リポジトリルートに用意した `Makefile` で 1 コマンド化されている:
+リポジトリルートで:
 
 ```bash
-# 1. JAR をビルド + GitHub Releases (タグ "latest") に upload
-make release
-
-# 2. EC2 を起動 (user_data が release から JAR を取得して compose up する)
-make deploy
+make release    # JAR + frontend dist をビルドして GitHub Releases (タグ "latest") に upload
+make deploy     # terraform apply で EC2 起動 (user_data が release から取得して起動)
 ```
 
-`make release` 内部で実行されること:
-- `cd backend && ./gradlew bootJar`
-- `cp backend/build/libs/*.jar backend/app.jar`
-- `gh release create latest backend/app.jar` (初回) または `gh release upload latest --clobber` (2 回目以降)
+数分待つと、`terraform output -raw ec2_public_dns` で表示される URL でアプリが開く。
 
-### 更新フロー (コード変更後)
+## 日常運用
+
+| やりたいこと | コマンド |
+|---|---|
+| コード更新後に再デプロイ | `make release && make redeploy` |
+| EC2 へ SSH | `make ssh` |
+| コンテナ状態を見る | `make status` |
+| ログを追う | `make logs` |
+| 全部消す | `make destroy` |
+
+## トラブルシュート
+
+- **502 Bad Gateway**: backend がまだ起動中。Nginx が先に立ち上がるため初回は 1〜2 分待つ
+- **接続できない (timeout)**: 自宅 IP が変わった可能性。`curl https://checkip.amazonaws.com` → `terraform.tfvars` の `my_ip` を更新 → `terraform apply`
+- **user_data が失敗**: `make ssh` 後 `sudo cat /var/log/cloud-init-output.log`
+- **release URL が 404**: `make release` を先に実行する必要あり
+
+## 後片付け (課題提出後)
 
 ```bash
-make release         # 新しい JAR を release "latest" に上書き upload
-make redeploy        # EC2 を作り直して新 JAR を取得 (terraform apply -replace=aws_instance.app)
-```
+# 1. EC2 / VPC / SG 削除
+make destroy
 
-## 後片付け (課題提出後・課金停止)
-
-```bash
-# 1. Terraform で作ったリソースを全削除
-cd infra
-terraform destroy
-
-# 2. tfstate 用のリソースも消す (任意・ただし無料枠内)
+# 2. tfstate 用リソース削除 (任意・無料枠内)
 aws s3 rm s3://taskmanagement-tfstate-okkun --recursive
 aws s3api delete-bucket --bucket taskmanagement-tfstate-okkun --region ap-northeast-1
 aws dynamodb delete-table --table-name taskmanagement-tflock --region ap-northeast-1
@@ -148,8 +147,15 @@ aws ec2 delete-key-pair --key-name taskmanagement-key --region ap-northeast-1
 rm ~/.ssh/taskmanagement-key.pem
 ```
 
-## 注意事項
+## セキュリティ運用
 
-- `terraform.tfvars` / `.terraform/` / `*.tfstate*` / `*.pem` は **絶対に Git にコミットしない** (`.gitignore` で除外済み)
-- 12ヶ月の無料枠を超えると EC2 / EBS が課金対象。**使わなくなったら必ず `terraform destroy`**
-- DB パスワードや自宅 IP などの秘密値は `terraform.tfvars` に置く
+- `terraform.tfvars` / `*.tfstate*` / `*.pem` / `tfplan` / `app.jar` / `frontend-dist.tar.gz` は **Git 管理しない** (`.gitignore` 済み)
+- SSH 22 / HTTP 80 は **`my_ip/32` のみ許可**。第三者に見せたい時だけ `cidr_blocks = ["0.0.0.0/0"]` に一時変更
+- 12ヶ月の無料枠を超えると EC2 / EBS が課金対象。**使わなくなったら必ず `make destroy`**
+
+## 将来の拡張 (Phase 2 以降)
+
+- **Phase 2**: DB を RDS db.t3.micro へ切り出し (12ヶ月無料、その後約 \$15/月)
+- **Phase 3**: GitHub Actions による自動デプロイ、Route53 + ACM で独自ドメイン HTTPS、CloudWatch Logs 集約
+
+> フロントは EC2 上の Nginx 配信で固定。S3 + CloudFront 構成は採用しない。
