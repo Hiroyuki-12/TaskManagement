@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: taskmanagement-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taskmanagement
+      POSTGRES_USER: task_user
+      POSTGRES_PASSWORD: task_pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U task_user -d taskmanagement"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: taskmanagement-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/taskmanagement
+      SPRING_DATASOURCE_USERNAME: task_user
+      SPRING_DATASOURCE_PASSWORD: task_pass
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
