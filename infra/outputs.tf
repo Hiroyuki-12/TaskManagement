@@ -17,3 +17,23 @@ output "availability_zone" {
   description = "使用中の AZ"
   value       = aws_subnet.public.availability_zone
 }
+
+output "ec2_public_dns" {
+  description = "EC2 のパブリック DNS"
+  value       = aws_instance.app.public_dns
+}
+
+output "ec2_public_ip" {
+  description = "EC2 のパブリック IP"
+  value       = aws_instance.app.public_ip
+}
+
+output "ssh_command" {
+  description = "EC2 へ SSH するためのコマンド"
+  value       = "ssh -i ~/.ssh/${var.key_name}.pem ec2-user@${aws_instance.app.public_dns}"
+}
+
+output "api_url" {
+  description = "Spring Boot API の URL"
+  value       = "http://${aws_instance.app.public_dns}:8080/api/cards"
+}
