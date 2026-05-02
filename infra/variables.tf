@@ -20,3 +20,21 @@ variable "key_name" {
   type        = string
   default     = "taskmanagement-key"
 }
+
+variable "db_name" {
+  description = "RDS の DB 名"
+  type        = string
+  default     = "taskmanagement"
+}
+
+variable "db_username" {
+  description = "RDS の master ユーザー"
+  type        = string
+  default     = "task_user"
+}
+
+variable "db_password" {
+  description = "RDS の master パスワード (terraform.tfvars で指定、Git 管理外)"
+  type        = string
+  sensitive   = true
+}

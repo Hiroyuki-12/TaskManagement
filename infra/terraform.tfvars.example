@@ -6,3 +6,7 @@
 #   # 例: 203.0.113.10 → "203.0.113.10/32"
 
 my_ip = "0.0.0.0/32"
+
+# RDS の master パスワード (8 文字以上、英数記号で十分強いものに)
+# このファイルではダミー値。terraform.tfvars に強いパスワードを設定すること。
+db_password = "CHANGE_ME_to_strong_password"

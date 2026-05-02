@@ -34,6 +34,11 @@ output "ssh_command" {
 }
 
 output "api_url" {
-  description = "Spring Boot API の URL"
-  value       = "http://${aws_instance.app.public_dns}:8080/api/cards"
+  description = "アプリ URL (Nginx 経由)"
+  value       = "http://${aws_instance.app.public_dns}/"
+}
+
+output "rds_endpoint" {
+  description = "RDS のエンドポイント (VPC 内のみ到達可)"
+  value       = aws_db_instance.main.endpoint
 }

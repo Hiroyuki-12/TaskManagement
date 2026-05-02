@@ -1,19 +1,25 @@
 # infra/ — TaskManagement AWS デプロイ (Terraform)
 
-スクール課題向けの個人利用前提・**AWS 無料枠 ($0 運用)** で TaskManagement をデプロイするための Terraform 設定。
+スクール課題向けの個人利用前提・**AWS 無料枠** で TaskManagement をデプロイするための Terraform 設定。
 
-## 構成 (Phase 1)
+## 構成 (Phase 2: RDS 切り出し済)
 
 ```
-ユーザー ──HTTP/80──▶ ┌──────────────────────────────────┐
-                    │ EC2 t2.micro (Public Subnet)      │
+ユーザー ──HTTP/80──▶ ┌─────────────────────────────────┐
+                    │ EC2 t2.micro (Public Subnet, AZ-a)│
                     │  ├─ Nginx (80)                    │
                     │  │   ├─ /        → React 静的     │
-                    │  │   └─ /api/*  → :8080 にプロキシ│
-                    │  ├─ Spring Boot (8080) Docker     │
-                    │  └─ PostgreSQL (5432) Docker      │
+                    │  │   └─ /api/*  → :8080           │
+                    │  └─ Spring Boot (8080) Docker     │
                     │  EBS gp3 8GB                      │
-                    └──────────────────────────────────┘
+                    └────────────┬─────────────────────┘
+                                 │ private DNS (5432)
+                                 ▼
+                    ┌─────────────────────────────────┐
+                    │ RDS db.t3.micro                 │
+                    │ PostgreSQL 16 / 20GB gp3        │
+                    │ (Private Subnets AZ-a, AZ-c)    │
+                    └─────────────────────────────────┘
 ```
 
 | AWS リソース | 用途 | 課金 |
@@ -22,6 +28,8 @@
 | Security Group | 22 / 80 を `my_ip` のみ許可 | 無料 |
 | EC2 t2.micro | アプリ実行 | 750h/月 (12ヶ月) |
 | EBS gp3 8GB | EC2 ルートディスク | 30GB/月 (12ヶ月) |
+| RDS db.t3.micro | マネージド PostgreSQL | 750h/月 (12ヶ月) |
+| RDS gp3 20GB | DB ストレージ | 20GB (12ヶ月) |
 | S3 (tfstate) | Terraform 状態管理 | 5GB (12ヶ月) |
 | DynamoDB (tflock) | tfstate ロック | 25GB (Always Free) |
 | データ転送 out | EC2 → ネット | 100GB/月 (Always Free) |
@@ -95,6 +103,7 @@ cd infra
 cp terraform.tfvars.example terraform.tfvars
 curl -s https://checkip.amazonaws.com    # 自分の IP を確認
 # my_ip を "<上記IP>/32" に書き換え
+# db_password を強いランダム文字列に書き換え (生成例: openssl rand -base64 24 | tr -d '/+=')
 ```
 
 ### 4. terraform init
@@ -153,9 +162,15 @@ rm ~/.ssh/taskmanagement-key.pem
 - SSH 22 / HTTP 80 は **`my_ip/32` のみ許可**。第三者に見せたい時だけ `cidr_blocks = ["0.0.0.0/0"]` に一時変更
 - 12ヶ月の無料枠を超えると EC2 / EBS が課金対象。**使わなくなったら必ず `make destroy`**
 
-## 将来の拡張 (Phase 2 以降)
+## 将来の拡張 (Phase 3)
 
-- **Phase 2**: DB を RDS db.t3.micro へ切り出し (12ヶ月無料、その後約 \$15/月)
-- **Phase 3**: GitHub Actions による自動デプロイ、Route53 + ACM で独自ドメイン HTTPS、CloudWatch Logs 集約
+- GitHub Actions による自動デプロイ
+- Route53 + ACM で独自ドメイン HTTPS
+- CloudWatch Logs 集約
 
 > フロントは EC2 上の Nginx 配信で固定。S3 + CloudFront 構成は採用しない。
+
+## 12ヶ月後の課金注意
+
+RDS / EC2 / EBS の無料枠は **12 ヶ月限定**。期限が近づいたら必ず `make destroy` で停止すること。
+RDS を残したまま放置すると月 \$15 程度発生する。
